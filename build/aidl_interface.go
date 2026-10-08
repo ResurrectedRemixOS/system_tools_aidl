@@ -187,6 +187,11 @@ func checkAidlGeneratedModules(mctx android.BottomUpMutatorContext) {
 	default:
 		return
 	}
+	// A prebuilt is already compiled. shared_libs on it are runtime NEEDED
+	// libraries, not AIDL sources, so two versions there are not a compile break.
+	if ccMod, ok := mctx.Module().(*cc.Module); ok && ccMod.IsPrebuilt() {
+		return
+	}
 	if gen, ok := mctx.Module().(*aidlGenRule); ok {
 		var notFrozen []string
 		var requireFrozenReasons []string

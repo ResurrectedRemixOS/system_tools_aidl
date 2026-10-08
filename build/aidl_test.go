@@ -1511,6 +1511,36 @@ func TestDuplicatedVersions(t *testing.T) {
 	}))
 }
 
+func TestPrebuiltCanLinkDifferentAidlVersions(t *testing.T) {
+	t.Parallel()
+	// A prebuilt is not compiled against the generated sources. It may NEEDED
+	// one frozen version and a platform library built against another.
+	testAidl(t, `
+		aidl_interface {
+			name: "myiface",
+			srcs: ["IFoo.aidl"],
+			versions: ["1", "2"],
+		}
+
+		cc_prebuilt_library_shared {
+			name: "prebuilt",
+			srcs: ["prebuilt.so"],
+			shared_libs: ["myiface-V1-ndk", "bar"],
+		}
+
+		cc_library {
+			name: "bar",
+			shared_libs: ["myiface-V2-ndk"],
+		}
+	`, withFiles(map[string][]byte{
+		"aidl_api/myiface/1/myiface.1.aidl": nil,
+		"aidl_api/myiface/1/.hash":          nil,
+		"aidl_api/myiface/2/myiface.2.aidl": nil,
+		"aidl_api/myiface/2/.hash":          nil,
+		"prebuilt.so":                       nil,
+	}))
+}
+
 func TestRecoveryAvailable(t *testing.T) {
 	t.Parallel()
 	ctx, _ := testAidl(t, `
